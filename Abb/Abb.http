@@ -1,0 +1,6 @@
+@Abb_HostAddress = http://localhost:5113
+
+GET {{Abb_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
