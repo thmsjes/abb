@@ -1,0 +1,6 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ABB-API_plateform/ABB-API_plateform.csproj" />
+</Solution>

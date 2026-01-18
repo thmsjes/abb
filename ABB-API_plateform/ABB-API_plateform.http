@@ -1,0 +1,6 @@
+@ABB_API_plateform_HostAddress = http://localhost:5285
+
+GET {{ABB_API_plateform_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
