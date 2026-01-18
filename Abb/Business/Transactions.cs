@@ -25,20 +25,30 @@ namespace Abb.Business
         }
         public async Task<TransactionResponseDTO> RegisterExpense(ExpenseRequestDTO request)
         {
-            // Added PropertyId to the column list and values
             const string sql = @"
-        INSERT INTO [Transactions] 
-            ([Description], [Amount], [DateAdded], [Category], [PropertyId]) 
-        VALUES 
-            (@Description, @Amount, @Date, @Category, @PropertyId)";
+                            INSERT INTO [Transactions] 
+                                ([Description], [Amount], [DateAdded], [Category], [PropertyId]) 
+                            VALUES 
+                                (@Description, @Amount, @DateAdded, @Category, @PropertyId)";
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
                 try
                 {
-                    // Dapper automatically maps request properties to the @ parameters.
-                    // Note: Ensure request.Date is already a DateTime or handle conversion before calling.
-                    int rowsAffected = await db.ExecuteAsync(sql, request);
+                    // Logic: If Date is default (0001-01-01), use Today.
+                    // We also convert DateOnly to DateTime to avoid Dapper mapping errors.
+                    var dateToSave = request.Date == default
+                        ? DateTime.Today
+                        : request.Date.ToDateTime(TimeOnly.MinValue);
+
+                    int rowsAffected = await db.ExecuteAsync(sql, new
+                    {
+                        request.Description,
+                        request.Amount,
+                        DateAdded = dateToSave, // Use our calculated date
+                        request.Category,
+                        request.PropertyId
+                    });
 
                     return new TransactionResponseDTO
                     {
@@ -60,11 +70,16 @@ namespace Abb.Business
         }
         public async Task<GetExpenseResponseDTO> GetExpenseByAttributes(GetExpenseByAttributesRequestDTO request)
         {
-            // 1. Base Query - Added PropertyId to the SELECT and WHERE
+            // 1. Base Query - Using AS Date to map DateAdded to the ExpenseDetail.Date property
             StringBuilder sql = new StringBuilder(@"
-        SELECT [Id], [Description], [Amount], [DateAdded], [Category], [PropertyId] 
-        FROM [Transactions] 
-        WHERE 1=1 ");
+                                SELECT [Id], 
+                                       [Description], 
+                                       [Amount], 
+                                       [DateAdded] AS Date, 
+                                       [Category], 
+                                       [PropertyId] 
+                                FROM [Transactions] 
+                                WHERE 1=1 ");
 
             // 2. Dynamic Filtering
             if (request.PropertyId > 0)
@@ -83,9 +98,15 @@ namespace Abb.Business
             {
                 try
                 {
-                    // 3. Dapper executes and maps everything in one line
-                    // We pass the 'request' object; Dapper matches names to the @parameters
-                    var results = await db.QueryAsync<ExpenseDetail>(sql.ToString(), request);
+                    var parameters = new
+                    {
+                        request.PropertyId,
+                        StartDate = request.StartDate?.ToDateTime(TimeOnly.MinValue),
+                        EndDate = request.EndDate?.ToDateTime(TimeOnly.MaxValue),
+                        request.Category
+                    };
+
+                    var results = await db.QueryAsync<ExpenseDetail>(sql.ToString(), parameters);
 
                     return new GetExpenseResponseDTO
                     {

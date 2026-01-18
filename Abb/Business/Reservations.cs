@@ -22,11 +22,11 @@ namespace Abb.Business
         private async Task<bool> CheckIfReservationExists(string confirmationNumber)
         {
             GetReservationResponseDTO reservation = await reservationClass.GetReservationByNumber(confirmationNumber);
-            if(reservation.Id > 0)
+            if(reservation==null)
             {
-                return true;
+                return false;
             }
-            else return false;
+            else return true;
         }
 
         public async Task<TransactionResponseDTO> CreateReservation(CreateReservationRequestDTO request)
@@ -44,12 +44,7 @@ namespace Abb.Business
         {
             //Update reservation
             var response = new TransactionResponseDTO();
-            var updateResult= await reservationClass.UpdateReservationByNumber(request);
-
-
-            //Update User
-
-            return response;
+           return await reservationClass.UpdateReservationByNumber(request);
         }
 
         public async Task<TransactionResponseDTO> DeleteReservation(int id)

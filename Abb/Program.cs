@@ -1,5 +1,6 @@
 using Abb.Business;
 using Abb.Data;
+using Dapper;
 using System.Transactions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,7 @@ builder.Services.AddCors(options => {
 
 var app = builder.Build();
 
+SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 // 4. Configure the HTTP request pipeline order is CRITICAL
 if (app.Environment.IsDevelopment())
 {

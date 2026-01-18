@@ -1,5 +1,6 @@
 ﻿using Abb.Business;
 using Abb.Data;
+using Azure;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using static Abb.DTOs.PropertyDTOs;
@@ -15,31 +16,37 @@ namespace Abb.Controllers
     public class PropertyController : Controller
     {
         private readonly IProperties _properties;
+        private readonly IUsersClass _usersClass;
 
-        public PropertyController(IProperties properties)
+        public PropertyController(IProperties properties, IUsersClass usersClass)
         {
             _properties = properties;
+            _usersClass = usersClass;
         }
 
         [HttpGet("getAllProperties")]
         public async Task<PropertyResponseDTO> GetAllProperties()
         {
-            return await _properties.GetAllProperties();
+            var property = await _properties.GetAllProperties();
+            return await _usersClass.AppendOwner(property);
         }
         [HttpGet("getPropertyById")]
         public async Task<PropertyResponseDTO> GetPropertyById([FromQuery]int propertyId)
         {
-            return await _properties.GetPropertyById( propertyId);
+            var property= await _properties.GetPropertyById( propertyId);
+            return await _usersClass.AppendOwner(property);
         }
         [HttpPost("createProperty")]
         public async Task<PropertyResponseDTO> CreateProperty([FromBody]PropertyDetail property)
         {
-            return await _properties.CreateProperty(property);
+            var response = await _properties.CreateProperty(property);
+            return await _usersClass.AppendOwner(response);
         }
         [HttpPut("updateProperty")]
         public async Task<PropertyResponseDTO> UpdateProperty([FromBody] PropertyDetail property)
         {
-            return await _properties.CreateProperty(property);
+            var response = await _properties.UpdateProperty(property);
+            return await _usersClass.AppendOwner(response);
         }
         [HttpDelete("deletePropertyById")]
         public async Task<PropertyResponseDTO> DeletePropertyById([FromQuery]int id)
