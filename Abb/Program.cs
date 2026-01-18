@@ -17,6 +17,7 @@ builder.Services.AddScoped<IUsersClass, UsersClass>();
 builder.Services.AddScoped<IReservations, ReservationsService>();
 builder.Services.AddScoped<IReservationsClass, ReservationsClass>();
 builder.Services.AddScoped<IProperties, PropertiesClass>();
+builder.Services.AddScoped<ICalendar, CalendarClass>();
 
 
 // 3. Define the CORS policy correctly
