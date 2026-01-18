@@ -17,14 +17,14 @@ namespace Abb.Controllers
 
         public UserController(IUsersClass _userClass)
         {
-            _userClass = userClass;
+            userClass = _userClass;
         }
 
         // GET: UserController/AllUsers
         [HttpGet("AllUserByPropertyId")]
-        public async Task<List<UserDetail>> GetAllUsers()
+        public async Task<List<UserDetail>> GetUsersByPropertyId([FromQuery] int propertyId)
         {
-           return await userClass.GetAllUsers();
+           return await userClass.GetUsersByPropertyId(propertyId);
         }
         // GET: UserController/User
         [HttpGet("User")]
