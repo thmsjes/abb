@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using static Abb.DTOs.UserDTOs;
 using static Abb.DTOs.PropertyDTOs;
 
-namespace Abb.Controllers
+namespace ABB_API_plateform.Controllers
 {
     [ApiController]
     [Route("api/")]
@@ -17,14 +17,14 @@ namespace Abb.Controllers
 
         public UserController(IUsersClass _userClass)
         {
-            userClass = _userClass;
+            _userClass = userClass;
         }
 
         // GET: UserController/AllUsers
         [HttpGet("AllUserByPropertyId")]
-        public async Task<List<UserDetail>> GetUsersByPropertyId([FromQuery] int propertyId)
+        public async Task<List<UserDetail>> GetAllUsers()
         {
-           return await userClass.GetUsersByPropertyId(propertyId);
+           return await userClass.GetAllUsers();
         }
         // GET: UserController/User
         [HttpGet("User")]

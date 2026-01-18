@@ -6,7 +6,7 @@ using System.Transactions;
 using static Abb.DTOs.AuthDtos;
 using static Abb.DTOs.TransactionsDTO;
 
-namespace Abb.Controllers
+namespace ABB_API_plateform.Controllers
 {
     [ApiController]
     [Route("api/")]

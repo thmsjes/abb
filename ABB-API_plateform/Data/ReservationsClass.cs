@@ -43,7 +43,7 @@ namespace Abb.Data
                 await conn.OpenAsync();
                 using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    if ( !reader.HasRows) return null;
+                    if (!await reader.ReadAsync()) return null;
 
                     while (await reader.ReadAsync())
                     {
@@ -126,19 +126,7 @@ namespace Abb.Data
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
-                // Convert DateOnly to DateTime using .ToDateTime(TimeOnly.MinValue)
-                var parameters = new
-                {
-                    request.ConfirmationNumber,
-                    request.CustomerId,
-                    request.PropertyId,
-                    CheckInDate = request.CheckInDate.ToDateTime(TimeOnly.MinValue),
-                    CheckoutDate = request.CheckoutDate.ToDateTime(TimeOnly.MinValue),
-                    request.LockCode,
-                    request.StaffId
-                };
-
-                int id = await db.QuerySingleAsync<int>(sql, parameters);
+                 int id =await db.QuerySingleAsync<int>(sql, request);
                 if (id == 0)
                 {
                     return new TransactionResponseDTO
@@ -170,18 +158,8 @@ namespace Abb.Data
                                 WHERE [ConfirmationNumber] = @ConfirmationNumber;";
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
-                var parameters = new
-                {
-                    request.CustomerId,
-                    request.PropertyId,
-                    CheckInDate = request.CheckInDate.ToDateTime(TimeOnly.MinValue),
-                    CheckoutDate = request.CheckoutDate.ToDateTime(TimeOnly.MinValue),
-                    request.LockCode,
-                    request.StaffId,
-                    request.ConfirmationNumber
-                };
-
-                int rowsAffected = await db.ExecuteAsync(sql, parameters);
+                // Execute returns the number of rows affected
+                int rowsAffected = await db.ExecuteAsync(sql, request);
                 if (rowsAffected > 0)
                 {
                     response.IsSuccess = true;
