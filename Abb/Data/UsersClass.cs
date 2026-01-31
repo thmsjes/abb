@@ -91,31 +91,31 @@ namespace Abb.Data
             {
                 try
                 {
-                    // 1. Fetch the CURRENT hashed password from the DB to compare
-                    const string getSql = "SELECT [HashedPassword] FROM [Users] WHERE [Id] = @Id";
-                    string existingHash = await db.QuerySingleOrDefaultAsync<string>(getSql, new { Id = request.Id });
+                    //// 1. Fetch the CURRENT hashed password from the DB to compare
+                    //const string getSql = "SELECT [HashedPassword] FROM [Users] WHERE [Id] = @Id";
+                    //string existingHash = await db.QuerySingleOrDefaultAsync<string>(getSql, new { Id = request.Id });
 
-                    // 2. Check if the password provided in the request is different from the hash
-                    // If BCrypt.Verify returns false, the user provided a NEW plain-text password
-                    bool isNewPassword = string.IsNullOrEmpty(existingHash) ||
-                                         !BCrypt.Net.BCrypt.Verify(request.Password, existingHash);
+                    //// 2. Check if the password provided in the request is different from the hash
+                    //// If BCrypt.Verify returns false, the user provided a NEW plain-text password
+                    //bool isNewPassword = string.IsNullOrEmpty(existingHash) ||
+                    //                     !BCrypt.Net.BCrypt.Verify(request.Password, existingHash);
 
-                    if (isNewPassword && !string.IsNullOrEmpty(request.Password))
-                    {
-                        // Hash the new plain-text password before saving
-                        request.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
-                    }
-                    else
-                    {
-                        // If the password hasn't changed, keep the existing hash
-                        request.Password = existingHash;
-                    }
+                    //if (isNewPassword && !string.IsNullOrEmpty(request.Password))
+                    //{
+                    //    // Hash the new plain-text password before saving
+                    //    request.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+                    //}
+                    //else
+                    //{
+                    //    // If the password hasn't changed, keep the existing hash
+                    //    request.Password = existingHash;
+                    //}
 
                     // 3. Perform the Update
                     const string updateSql = @"
                 UPDATE [ABB].[dbo].[Users]
-                SET [UserName] = @Username, 
-                    [HashedPassword] = @Password, 
+                SET 
+                   
                     [Access] = @Access, 
                     [FirstName] = @FirstName, 
                     [LastName] = @LastName, 

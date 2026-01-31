@@ -12,7 +12,11 @@ namespace Abb.Business
     public interface ITransactions
     {
         Task<TransactionResponseDTO> RegisterExpense(ExpenseRequestDTO request);
+        Task<TransactionResponseDTO> AddMileage(MileageRequestDTO request);
+        Task<List<MileageResponseDTO>> GetMileage(GetMileageByAttributesRequestDTO request);
         Task<GetExpenseResponseDTO> GetExpenseByAttributes(GetExpenseByAttributesRequestDTO request);
+        Task<TransactionResponseDTO> DeleteTransaction(int transactionId);
+
     }
     public class TransactionsService : ITransactions
     {
@@ -27,9 +31,9 @@ namespace Abb.Business
         {
             const string sql = @"
                             INSERT INTO [Transactions] 
-                                ([Description], [Amount], [DateAdded], [Category], [PropertyId]) 
+                                ([Description], [Amount], [DateAdded], [Category], [PropertyId], [PaymentType], [Expense], [Payment], [Vendor]) 
                             VALUES 
-                                (@Description, @Amount, @DateAdded, @Category, @PropertyId)";
+                                (@Description, @Amount, @DateAdded, @Category, @PropertyId, @PaymentType, @Expense, @Payment, @Vendor)";
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
@@ -40,14 +44,18 @@ namespace Abb.Business
                     var dateToSave = request.Date == default
                         ? DateTime.Today
                         : request.Date.ToDateTime(TimeOnly.MinValue);
-
+                    var expense = request.Category == "Payment" ? false : true;
                     int rowsAffected = await db.ExecuteAsync(sql, new
                     {
                         request.Description,
                         request.Amount,
                         DateAdded = dateToSave, // Use our calculated date
                         request.Category,
-                        request.PropertyId
+                        request.PropertyId,
+                        request.PaymentType,
+                        Expense = expense,  
+                        Payment = !expense, 
+                        request.Vendor
                     });
 
                     return new TransactionResponseDTO
@@ -77,7 +85,9 @@ namespace Abb.Business
                                        [Amount], 
                                        [DateAdded] AS Date, 
                                        [Category], 
-                                       [PropertyId] 
+                                       [PropertyId], 
+                                       [Expense] ,
+                                       [Payment] 
                                 FROM [Transactions] 
                                 WHERE 1=1 ");
 
@@ -103,7 +113,8 @@ namespace Abb.Business
                         request.PropertyId,
                         StartDate = request.StartDate?.ToDateTime(TimeOnly.MinValue),
                         EndDate = request.EndDate?.ToDateTime(TimeOnly.MaxValue),
-                        request.Category
+                        request.Category,
+
                     };
 
                     var results = await db.QueryAsync<ExpenseDetail>(sql.ToString(), parameters);
@@ -120,6 +131,117 @@ namespace Abb.Business
                     {
                         IsSuccess = false,
                         Message = $"Error retrieving expenses: {ex.Message}"
+                    };
+                }
+            }
+        }
+        public async Task<TransactionResponseDTO> AddMileage(MileageRequestDTO request)
+        {
+
+            string sql = @"INSERT INTO [dbo].[Mileage] 
+                   ([Mileage], [Description], [DateTimeInserted], [PropertyId], [Date]) 
+                   VALUES (@Mileage, @Description, @DateTimeInserted, @PropertyId, @Date)";
+
+            using (IDbConnection db = new SqlConnection(_connectionString))
+            {
+                // Dapper automatically maps these properties to the @parameters in the SQL string
+                var parameters = new
+                {
+                    Mileage = request.Mileage,
+                    Description = request.Description,
+                    DateTimeInserted = DateTime.Now,
+                    Date = request.Date,
+                    PropertyId = request.PropertyId
+                };
+
+                try
+                {
+                    int rowsAffected = db.Execute(sql, parameters);
+                    Console.WriteLine($"Successfully inserted {rowsAffected} record(s).");
+                    return new TransactionResponseDTO {IsSuccess = true };
+                }
+                catch (Exception ex)
+                {
+                    // Handle exceptions (logging, etc)
+                    Console.WriteLine(ex.Message);
+                    return new TransactionResponseDTO { IsSuccess = false, Message = ex.Message.ToString() };
+
+                }
+            }
+
+        }
+        public async Task<List<MileageResponseDTO>> GetMileage(GetMileageByAttributesRequestDTO request)
+        {
+            // 1. Base Query
+            var sql = @"SELECT [id]
+                      ,[Mileage]
+                      ,[Description]
+                      ,[DateTimeInserted]
+                      ,[PropertyId]
+                      ,[Date]
+                FROM [ABB].[dbo].[Mileage]
+                WHERE [PropertyId] = @PropertyId";
+
+            // 2. Add Optional Date Filtering
+            if (request.StartDate.HasValue)
+            {
+                sql += " AND [DateTimeInserted] >= @StartDate";
+            }
+
+            if (request.EndDate.HasValue)
+            {
+                // Add 1 day to the EndDate to ensure the query includes the entire final day
+                sql += " AND [DateTimeInserted] < @EndDatePlusOne";
+            }
+
+            using (IDbConnection db = new SqlConnection(_connectionString))
+            {
+                // 3. Execute the query using Dapper's QueryAsync
+                // Dapper handles the mapping from the SQL columns to your DTO properties
+                var results = await db.QueryAsync<MileageResponseDTO>(sql, new
+                {
+                    PropertyId = request.PropertyId,
+                    StartDate = request.StartDate?.ToDateTime(TimeOnly.MinValue),
+                    EndDatePlusOne = request.EndDate?.ToDateTime(TimeOnly.MinValue).AddDays(1)
+                });
+
+                // 4. Manually map to handle DateOnly conversion
+                var mileageList = results.Select(static row => new MileageResponseDTO
+                {
+                    Mileage = row.Mileage,
+                    Description = row.Description,
+                    DateTimeInserted = row.DateTimeInserted,
+                    PropertyId = row.PropertyId,
+                    Date = row.Date
+                }).ToList();
+
+                return mileageList;
+            }
+        }
+        public async Task<TransactionResponseDTO> DeleteTransaction(int transactionId)
+        {
+            const string sql = "DELETE FROM [ABB].[dbo].[Transactions] WHERE [Id] = @TransactionId";
+
+            using (IDbConnection db = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    int rowsAffected = await db.ExecuteAsync(sql, new { TransactionId = transactionId });
+
+                    return new TransactionResponseDTO
+                    {
+                        IsSuccess = rowsAffected > 0,
+                        Message = rowsAffected > 0
+                            ? "Transaction deleted successfully"
+                            : "Transaction not found or delete failed"
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new TransactionResponseDTO
+                    {
+                        IsSuccess = false,
+                        Message = $"Error deleting transaction: {ex.Message}"
                     };
                 }
             }

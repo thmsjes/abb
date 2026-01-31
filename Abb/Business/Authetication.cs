@@ -28,9 +28,9 @@ namespace Abb.Business
         {
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             string sql = "INSERT INTO Users (Username, HashedPassword, Access, LastLogin, Email, PhoneNumber" +
-                "ConfirmationNumber, Company, Addess, City. State, Zip, Notes ) " +
+                ",ConfirmationNumber, Company, Address, City, State, Zip, Notes, PropertyId, FirstName, LastName ) " +
                          "VALUES (@username, @hash, @access,@lastLogin, @Email, @PhoneNumber, @ConfirmationNumber," +
-                         "@Company, @Address, @City, @State, @Zip, @Notes)";
+                         "@Company, @Address, @City, @State, @Zip, @Notes, @PropertyId, @FirstName, @LastName)";
             int access = request.Admin ? 1 : request.Cleaner ? 2 : request.Maintenance ? 3 : 4;
             DateTime lastLogin =  DateTime.Now;
 
@@ -53,6 +53,9 @@ namespace Abb.Business
                         cmd.Parameters.AddWithValue("@State", request.State);
                         cmd.Parameters.AddWithValue("@Zip", request.Zip);
                         cmd.Parameters.AddWithValue("@Notes", request.Notes);
+                        cmd.Parameters.AddWithValue("@PropertyId", request.PropertyId);
+                        cmd.Parameters.AddWithValue("@FirstName", request.FirstName);
+                        cmd.Parameters.AddWithValue("@LastName", request.LastName);
                         await conn.OpenAsync();
                         int rowsAffected = await cmd.ExecuteNonQueryAsync();
                         return rowsAffected > 0;
@@ -72,11 +75,12 @@ namespace Abb.Business
 
             string storedHash = null;
             string accessLevel = null;
+            int propertyId = -1;
 
             // 2. Fetch the User from DB
             using (SqlConnection conn = new SqlConnection(_connectionString))
             {
-                string sql = "SELECT HashedPassword, Access FROM Users WHERE Username = @username";
+                string sql = "SELECT HashedPassword, Access, PropertyId FROM Users WHERE Username = @username";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@username", cleanUsername);
@@ -87,6 +91,7 @@ namespace Abb.Business
                         {
                             storedHash = reader["HashedPassword"].ToString();
                             accessLevel = reader["Access"].ToString();
+                            propertyId = (int)reader["PropertyId"];
                         }
                     }
                 }
@@ -95,7 +100,7 @@ namespace Abb.Business
             // 3. Verify Password & Generate Token
             if (storedHash != null && BCrypt.Net.BCrypt.Verify(request.Password, storedHash))
             {
-                string token = GenerateJwtToken(cleanUsername, accessLevel);
+                string token = GenerateJwtToken(cleanUsername, accessLevel, propertyId);
 
                 return new LoginResponseDTO
                 {
@@ -107,7 +112,7 @@ namespace Abb.Business
             return new LoginResponseDTO { IsSuccess = "false" };
         }
 
-        private string GenerateJwtToken(string username, string access)
+        private string GenerateJwtToken(string username, string access, int propertyId)
         {
             var securityKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
                 System.Text.Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -118,6 +123,7 @@ namespace Abb.Business
             {
         new System.Security.Claims.Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub, username),
         new System.Security.Claims.Claim("AccessLevel", access), // Custom claim from DB
+        new System.Security.Claims.Claim("PropertyId", propertyId.ToString()), // Custom claim from DB
         new System.Security.Claims.Claim(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
     };
 

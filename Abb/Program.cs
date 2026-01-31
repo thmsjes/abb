@@ -18,14 +18,16 @@ builder.Services.AddScoped<IReservations, ReservationsService>();
 builder.Services.AddScoped<IReservationsClass, ReservationsClass>();
 builder.Services.AddScoped<IProperties, PropertiesClass>();
 builder.Services.AddScoped<ICalendar, CalendarClass>();
+builder.Services.AddScoped<IInvoices, InvoicesClass>();
 
 
 // 3. Define the CORS policy correctly
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReact", policy => {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5175")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 

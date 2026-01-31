@@ -112,6 +112,7 @@ namespace Abb.Data
                                 [CheckoutDate], 
                                 [LockCode], 
                                 [StaffId]
+                                ,[CleaningDateTime]
                             ) 
                             VALUES (
                                 @ConfirmationNumber, 
@@ -120,7 +121,9 @@ namespace Abb.Data
                                 @CheckInDate, 
                                 @CheckoutDate, 
                                 @LockCode, 
-                                @StaffId
+                                @StaffId,
+                                @CleaningDateTime
+
                             );
                             SELECT CAST(SCOPE_IDENTITY() as int);"; // Gets the last generated ID
 
@@ -135,7 +138,8 @@ namespace Abb.Data
                     CheckInDate = request.CheckInDate.ToDateTime(TimeOnly.MinValue),
                     CheckoutDate = request.CheckoutDate.ToDateTime(TimeOnly.MinValue),
                     request.LockCode,
-                    request.StaffId
+                    request.StaffId,
+                    request.CleaningDateTime
                 };
 
                 int id = await db.QuerySingleAsync<int>(sql, parameters);
@@ -166,7 +170,8 @@ namespace Abb.Data
                                     [CheckInDate] = @CheckInDate,
                                     [CheckoutDate] = @CheckoutDate,
                                     [LockCode] = @LockCode,
-                                    [StaffId] = @StaffId
+                                    [StaffId] = @StaffId,
+                                    [CleaningDateTime] = @CleaningDateTime
                                 WHERE [ConfirmationNumber] = @ConfirmationNumber;";
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
@@ -178,7 +183,8 @@ namespace Abb.Data
                     CheckoutDate = request.CheckoutDate.ToDateTime(TimeOnly.MinValue),
                     request.LockCode,
                     request.StaffId,
-                    request.ConfirmationNumber
+                    request.ConfirmationNumber,
+                    request.CleaningDateTime
                 };
 
                 int rowsAffected = await db.ExecuteAsync(sql, parameters);
