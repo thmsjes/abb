@@ -4,8 +4,8 @@
     {
         public class RegisterRequest
         {
-            public string Username { get; set; }
-            public string Password { get; set; }
+            public string? Username { get; set; } = string.Empty;
+            public string? Password { get; set; } = string.Empty;
             public bool Admin { get; set; } = false;
             public bool Cleaner { get; set; } = false;
             public bool Maintenance { get; set; } = false;
@@ -14,12 +14,12 @@
             public string? Email { get; set; }
             public string? PhoneNumber { get; set; }
             public string? ConfirmationNumber { get; set; }
-            public string Company { get; set; }
-            public string Address { get; set; }
-            public string City { get; set; }
-            public string State { get; set; }
-            public string Zip { get; set; }
-            public string Notes { get; set; }
+            public string? Company { get; set; }
+            public string? Address { get; set; }
+            public string? City { get; set; }
+            public string? State { get; set; }
+            public string? Zip { get; set; }
+            public string? Notes { get; set; }
         }
         
         public class LoginRequestDTO
@@ -33,6 +33,12 @@
             public string Token { get; set; }
             public string IsSuccess { get; set; }   
             public string Message { get; set; }
+        }
+
+        public class RegistrationResponseDTO
+        {
+            public bool IsSuccess { get; set; }
+            public int Id { get; set; }
         }
     }
 }

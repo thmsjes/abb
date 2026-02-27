@@ -53,9 +53,9 @@ namespace Abb.Controllers
             return await _invoices.GetAllNotPaidInvoicesByPropertyId( propertyId);
         }
         [HttpDelete("DeleteInvoiceByInvoiceId")]
-        public async Task<TransactionResponseDTO> DeleteInvoiceByInvoiceId( int propertyId)
+        public async Task<TransactionResponseDTO> DeleteInvoiceByInvoiceId( [FromQuery]int invoiceId)
         {
-            return await _invoices.DeleteInvoiceByInvoiceId( propertyId);
+            return await _invoices.DeleteInvoiceByInvoiceId(invoiceId);
         }
 
 

@@ -56,7 +56,7 @@ namespace Abb.Data
             const string sql = @"
         SELECT [Id], [UserName] as Username, [HashedPassword] as Password, [Access], 
                [FirstName], [LastName], [Email], [PhoneNumber], [ConfirmationNumber], 
-               [Company], [Address], [City], [State], [Zip], [Notes]
+               [Company], [Address], [City], [State], [Zip], [Notes], [PropertyId]
         FROM [ABB].[dbo].[Users] 
         WHERE [Id] = @Id";
 

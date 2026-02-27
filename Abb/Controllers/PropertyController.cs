@@ -53,5 +53,41 @@ namespace Abb.Controllers
         {
             return await _properties.DeletePropertyById(id);
         }
+
+        [HttpGet("getAllReviews")]
+        public async Task<ReviewResponseDTO> GetAllReviews()
+        {
+            return await _properties.GetAllReviews();
+        }
+
+        [HttpGet("getReviewsByPropertyId")]
+        public async Task<ReviewResponseDTO> GetReviewsByPropertyId([FromQuery] int propertyId)
+        {
+            return await _properties.GetReviewsByPropertyId(propertyId);
+        }
+
+        [HttpGet("getReviewById")]
+        public async Task<ReviewResponseDTO> GetReviewById([FromQuery] int reviewId)
+        {
+            return await _properties.GetReviewById(reviewId);
+        }
+
+        [HttpPost("createReview")]
+        public async Task<ReviewResponseDTO> CreateReview([FromBody] CreateReviewRequestDTO request)
+        {
+            return await _properties.CreateReview(request);
+        }
+
+        [HttpPut("updateReview")]
+        public async Task<ReviewResponseDTO> UpdateReview([FromBody] UpdateReviewRequestDTO request)
+        {
+            return await _properties.UpdateReview(request);
+        }
+
+        [HttpDelete("deleteReview")]
+        public async Task<ReviewResponseDTO> DeleteReview([FromQuery] int reviewId)
+        {
+            return await _properties.DeleteReviewById(reviewId);
+        }
     }
 }

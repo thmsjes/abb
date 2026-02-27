@@ -13,9 +13,9 @@ namespace ABB_API_plateform.Controllers
     [EnableCors]
     public class UserController : ControllerBase
     {
-        private readonly IUsersClass userClass;
+        private readonly IUsersClass _userClass;
 
-        public UserController(IUsersClass _userClass)
+        public UserController(IUsersClass userClass)
         {
             _userClass = userClass;
         }
@@ -24,33 +24,33 @@ namespace ABB_API_plateform.Controllers
         [HttpGet("AllUserByPropertyId")]
         public async Task<List<UserDetail>> GetAllUsers()
         {
-           return await userClass.GetAllUsers();
+           return await _userClass.GetAllUsers();
         }
         // GET: UserController/User
         [HttpGet("User")]
         public async Task<UserResponseDTO> GetUser([FromQuery] int id)
         {
-            return await userClass.GetUser(id);
+            return await _userClass.GetUser(id);
         }
 
         // Put: UserController/User
         [HttpPut("User")]
         public async Task<UserResponseDTO> UpdateUser(UserDetail request)
         {
-            return await userClass.UpdateUser(request);
+            return await _userClass.UpdateUser(request);
         }
 
         // Delete: UserController/User
         [HttpDelete("User")]
         public async Task<UserResponseDTO> DeleteUser(int id)
         {
-            return await userClass.DeleteUser(id);
+            return await _userClass.DeleteUser(id);
         }
 
         [HttpGet("owner")]
         public async Task<PropertyOwner> GetOwner(int id)
         {
-            return await userClass.GetPropertyOwner(id);
+            return await _userClass.GetPropertyOwner(id);
         }
 
     }

@@ -39,7 +39,7 @@ namespace ABB_API_plateform.Controllers
         [HttpPut("updateProperty")]
         public async Task<PropertyResponseDTO> UpdateProperty([FromBody] PropertyDetail property)
         {
-            return await _properties.CreateProperty(property);
+            return await _properties.UpdateProperty(property);
         }
         [HttpDelete("deletePropertyById")]
         public async Task<PropertyResponseDTO> DeletePropertyById([FromQuery]int id)

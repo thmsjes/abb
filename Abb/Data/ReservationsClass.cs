@@ -30,39 +30,55 @@ namespace Abb.Data
 
         public async Task<List<GetReservationResponseDTO>> GetAllReservationsByPropertyId(int propertyId)
         {
-            List<GetReservationResponseDTO> response = new List<GetReservationResponseDTO>();
-
-            const string sql = @"
-                        SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, CheckInDate, CheckoutDate, LockCode
-                        FROM Reservations
-                        WHERE PropertyId = @PropertyId";
-            using (var conn = new SqlConnection(_connectionString))
-            using (var cmd = new SqlCommand(sql, conn))
+            try
             {
-                cmd.Parameters.AddWithValue("@PropertyId", propertyId);
-                await conn.OpenAsync();
-                using (var reader = await cmd.ExecuteReaderAsync())
-                {
-                    if ( !reader.HasRows) return null;
+                List<GetReservationResponseDTO> response = new List<GetReservationResponseDTO>();
 
-                    while (await reader.ReadAsync())
+                const string sql = @"
+                        SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs
+                        FROM Reservations
+                        WHERE PropertyId = @PropertyId
+                        ORDER BY CheckInDate DESC";
+                using (var conn = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@PropertyId", propertyId);
+                    await conn.OpenAsync();
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        var reservation = new ReservationDTOs.GetReservationResponseDTO
+                        if (!reader.HasRows) return null;
+
+                        while (await reader.ReadAsync())
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            ConfirmationNumber = reader["ConfirmationNumber"]?.ToString(),
-                            CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                            PropertyId = reader.GetInt32(reader.GetOrdinal("PropertyId")),
-                            StaffId = reader.GetInt32(reader.GetOrdinal("StaffId")),
-                            CheckInDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckInDate"))),
-                            CheckoutDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckoutDate"))),
-                            LockCode = reader["LockCode"]?.ToString()
-                        };
-                        response.Add(reservation);
+                            var reservation = new ReservationDTOs.GetReservationResponseDTO
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                ConfirmationNumber = reader["ConfirmationNumber"]?.ToString(),
+                                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                                PropertyId = reader.GetInt32(reader.GetOrdinal("PropertyId")),
+                                StaffId = reader.IsDBNull(reader.GetOrdinal("StaffId"))
+                                        ? 0
+                                        : reader.GetInt32(reader.GetOrdinal("StaffId")),
+                                CheckInDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckInDate"))),
+                                CheckoutDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckoutDate"))),
+                                LockCode = reader["LockCode"]?.ToString(),
+                                CleaningDateTime = reader.IsDBNull(reader.GetOrdinal("CleaningDateTime"))
+                                                ? null
+                                                : reader.GetDateTime(reader.GetOrdinal("CleaningDateTime")),
+                                GuestCount = reader.GetInt32(reader.GetOrdinal("GuestCount")),
+                                Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs"))
+                            };
+                            response.Add(reservation);
+                        }
                     }
                 }
+                return response;
             }
-            return response;
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                throw;
+            }
         }
 
         public async Task<GetReservationResponseDTO> GetReservationByNumber(string confirmationNumber)
@@ -71,36 +87,53 @@ namespace Abb.Data
                 return null;
 
             const string sql = @"
-                        SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, CheckInDate, CheckoutDate, LockCode
-                        FROM Reservations
-                        WHERE ConfirmationNumber = @ConfirmationNumber";
+        SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, CheckInDate, 
+               CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs
+        FROM [ABB].[dbo].[Reservations]
+        WHERE [ConfirmationNumber] = @ConfirmationNumber";
 
-            using (var conn = new SqlConnection(_connectionString))
-            using (var cmd = new SqlCommand(sql, conn))
+            try
             {
-                cmd.Parameters.AddWithValue("@ConfirmationNumber", confirmationNumber);
-                await conn.OpenAsync();
-
-                using (var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
+                using (var conn = new SqlConnection(_connectionString))
+                using (var cmd = new SqlCommand(sql, conn))
                 {
-                    if (!await reader.ReadAsync())
-                        return null;
+                    // Explicitly define the parameter type to match your DB schema
+                    cmd.Parameters.Add("@ConfirmationNumber", SqlDbType.NVarChar).Value = confirmationNumber.Trim();
 
-                    return new ReservationDTOs.GetReservationResponseDTO
+                    await conn.OpenAsync();
+
+                    using (var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow))
                     {
-                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        ConfirmationNumber = reader["ConfirmationNumber"]?.ToString(),
-                        CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
-                        PropertyId = reader.GetInt32(reader.GetOrdinal("PropertyId")),
-                        StaffId = reader.GetInt32(reader.GetOrdinal("StaffId")),
-                        CheckInDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckInDate"))),
-                        CheckoutDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckoutDate"))),
-                        LockCode = reader["LockCode"]?.ToString()
-                    };
+                        if (!await reader.ReadAsync())
+                            return null; // No record found
+
+                        return new GetReservationResponseDTO
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            ConfirmationNumber = reader["ConfirmationNumber"]?.ToString(),
+                            // Use IsDBNull checks for any field that COULD be null in SQL
+                            CustomerId = reader.IsDBNull(reader.GetOrdinal("CustomerId")) ? 0 : reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                            PropertyId = reader.IsDBNull(reader.GetOrdinal("PropertyId")) ? 0 : reader.GetInt32(reader.GetOrdinal("PropertyId")),
+                            StaffId = reader.IsDBNull(reader.GetOrdinal("StaffId")) ? 0 : reader.GetInt32(reader.GetOrdinal("StaffId")),
+                            CheckInDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckInDate"))),
+                            CheckoutDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckoutDate"))),
+                            LockCode = reader["LockCode"]?.ToString(),
+                            CleaningDateTime = reader.IsDBNull(reader.GetOrdinal("CleaningDateTime"))
+                                               ? null
+                                               : reader.GetDateTime(reader.GetOrdinal("CleaningDateTime")),
+                            GuestCount = reader.IsDBNull(reader.GetOrdinal("GuestCount")) ? 0 : reader.GetInt32(reader.GetOrdinal("GuestCount")),
+                            Dogs = !reader.IsDBNull(reader.GetOrdinal("Dogs")) && reader.GetBoolean(reader.GetOrdinal("Dogs"))
+                        };
+                    }
                 }
             }
+            catch (SqlException ex)
+            {
+                // Log this using your logging framework
+                // _logger.LogError(ex, "Database error finding reservation {Ref}", confirmationNumber);
+                throw new Exception("Database connectivity error.", ex);
+            }
         }
-
         public async Task<TransactionResponseDTO> CreateReservation(CreateReservationRequestDTO request)
         {
             const string sql = @"
@@ -111,8 +144,10 @@ namespace Abb.Data
                                 [CheckInDate], 
                                 [CheckoutDate], 
                                 [LockCode], 
-                                [StaffId]
-                                ,[CleaningDateTime]
+                                [StaffId],
+                                [CleaningDateTime],
+                                [GuestCount],
+                                [Dogs]
                             ) 
                             VALUES (
                                 @ConfirmationNumber, 
@@ -122,10 +157,11 @@ namespace Abb.Data
                                 @CheckoutDate, 
                                 @LockCode, 
                                 @StaffId,
-                                @CleaningDateTime
-
+                                @CleaningDateTime,
+                                @GuestCount,
+                                @Dogs
                             );
-                            SELECT CAST(SCOPE_IDENTITY() as int);"; // Gets the last generated ID
+                            SELECT CAST(SCOPE_IDENTITY() as int);";
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
@@ -139,7 +175,9 @@ namespace Abb.Data
                     CheckoutDate = request.CheckoutDate.ToDateTime(TimeOnly.MinValue),
                     request.LockCode,
                     request.StaffId,
-                    request.CleaningDateTime
+                    request.CleaningDateTime,
+                    request.GuestCount,
+                    request.Dogs
                 };
 
                 int id = await db.QuerySingleAsync<int>(sql, parameters);
@@ -163,7 +201,7 @@ namespace Abb.Data
         {
             var response = new TransactionResponseDTO();
 
-            const string sql = @"UPDATE [Reservations] -- Replace with your actual table name
+            const string sql = @"UPDATE [Reservations]
                                 SET 
                                     [CustomerId] = @CustomerId,
                                     [PropertyId] = @PropertyId,
@@ -171,7 +209,9 @@ namespace Abb.Data
                                     [CheckoutDate] = @CheckoutDate,
                                     [LockCode] = @LockCode,
                                     [StaffId] = @StaffId,
-                                    [CleaningDateTime] = @CleaningDateTime
+                                    [CleaningDateTime] = @CleaningDateTime,
+                                    [GuestCount] = @GuestCount,
+                                    [Dogs] = @Dogs
                                 WHERE [ConfirmationNumber] = @ConfirmationNumber;";
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
@@ -184,7 +224,9 @@ namespace Abb.Data
                     request.LockCode,
                     request.StaffId,
                     request.ConfirmationNumber,
-                    request.CleaningDateTime
+                    request.CleaningDateTime,
+                    request.GuestCount,
+                    request.Dogs
                 };
 
                 int rowsAffected = await db.ExecuteAsync(sql, parameters);

@@ -44,5 +44,42 @@
             public string? Zip { get; set; }
             public string? Notes { get; set; }
         }
+
+        public class ReviewDetail
+            {
+                public int Id { get; set; }
+                public DateTime ReviewDate { get; set; }
+                public string ReviewerName { get; set; }
+                public string ReviewText { get; set; }
+                public int PropertyId { get; set; }
+                public string Score { get; set; }
+        }
+
+        public class CreateReviewRequestDTO
+            {
+                public string ReviewerName { get; set; }
+                public string ReviewText { get; set; }
+                public int PropertyId { get; set; }
+                public string Score { get; set; }
+                public DateTime ReviewDate { get; set; }
+        }
+
+        public class UpdateReviewRequestDTO
+            {
+                public int Id { get; set; }
+                public string ReviewerName { get; set; }
+                public string ReviewText { get; set; }
+                public string Score { get; set; }
+                public DateTime ReviewDate { get; set; }
+        }
+
+        public class ReviewResponseDTO
+            {
+                public bool IsSuccess { get; set; }
+                public string Message { get; set; }
+                public List<ReviewDetail> Reviews { get; set; } = new List<ReviewDetail>();
+            }
     }
 }
+
+

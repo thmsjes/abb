@@ -148,7 +148,7 @@ namespace Abb.Data
                         [State] = @State,
                         [Zip] = @Zip,
                         [OwnerId] = @OwnerId
-                    WHERE [PropertyId] = @Id";
+                    WHERE [PropertyId] = @PropertyId";
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {

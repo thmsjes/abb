@@ -24,6 +24,11 @@ namespace Abb.Controllers
         {
             return await _reservations.GetAllReservationsByPropertyId(propertyId);
         }
+        [HttpGet("getAllReservationByReference")]
+        public async Task<ReservationForGuestPortalResponseDTO> GetAllReservationByReference([FromQuery]string confirmationNumber)
+        {
+            return await _reservations.GetAllReservationByReference(confirmationNumber);
+        }
 
         [HttpPost("createReservation")]
         public async Task<TransactionResponseDTO> CreateReservation([FromBody] CreateReservationRequestDTO request)
