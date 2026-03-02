@@ -22,9 +22,9 @@ namespace ABB_API_plateform.Controllers
 
         // GET: UserController/AllUsers
         [HttpGet("AllUserByPropertyId")]
-        public async Task<List<UserDetail>> GetAllUsers()
+        public async Task<List<UserDetail>> GetAllUsers([FromQuery] int propertyId)
         {
-           return await _userClass.GetAllUsers();
+           return await _userClass.GetAllUsers(propertyId);
         }
         // GET: UserController/User
         [HttpGet("User")]

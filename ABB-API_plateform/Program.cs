@@ -1,31 +1,37 @@
 ﻿using Abb.Business;
 using Abb.Data;
 using ABB_API_plateform.Business;
-using ABB_API_plateform.Infrastructure; // ⭐ Add this
-using Dapper; // ⭐ Add this
+using ABB_API_plateform.Infrastructure;
+using Dapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ⭐ Register Dapper type handlers for DateOnly
+// Register Dapper type handlers for DateOnly
 SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 SqlMapper.AddTypeHandler(new DateOnlyNullableTypeHandler());
 
-// 1. Add services to the container.
+// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 2. Register your Auth Service
+// Register services
 builder.Services.AddScoped<IAuthentication, AuthenticationService>();
 builder.Services.AddScoped<ITransactions, TransactionsService>();
 builder.Services.AddScoped<IUsersClass, UsersClass>();
 builder.Services.AddScoped<IReservations, ReservationsService>();
 builder.Services.AddScoped<IReservationsClass, ReservationsClass>();
 builder.Services.AddScoped<IProperties, PropertiesClass>();
+builder.Services.AddScoped<IReviews, ReviewsService>();
+builder.Services.AddScoped<IReviewsClass, ReviewsClass>();
+builder.Services.AddScoped<IEvents, EventsService>();
+builder.Services.AddScoped<IEventsClass, EventsClass>();
+builder.Services.AddScoped<IInvoices, InvoicesService>();      
+builder.Services.AddScoped<IInvoicesClass, InvoicesClass>();    
 builder.Services.AddScoped<ILogging, Logging>();
 
 
-// 3. Define the CORS policy correctly
+// CORS
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowReact", policy => {
         policy.WithOrigins(
@@ -37,26 +43,16 @@ builder.Services.AddCors(options => {
               )
               .AllowAnyMethod()
               .AllowAnyHeader();
-              
     });
 });
 
 var app = builder.Build();
 
-// 4. Configure the HTTP request pipeline order is CRITICAL
-//if (app.Environment.IsDevelopment())
-//{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-//}
-
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseHttpsRedirection();
-
-// UseCors MUST come after UseRouting (implied) and BEFORE UseAuthorization
 app.UseCors("AllowReact");
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

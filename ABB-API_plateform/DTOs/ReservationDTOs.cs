@@ -11,6 +11,7 @@
             public DateOnly? CheckInDate { get; set; }
             public DateOnly? CheckoutDate{ get; set; }
             public string LockCode{ get; set; }
+            public string ReservationFrom { get; set; }
             public DateTime? CleaningDateTime { get; set; }
             public int GuestCount { get; set; }
             public bool Dogs { get; set; }
@@ -25,6 +26,7 @@
             public DateOnly? CheckInDate { get; set; }
             public DateOnly? CheckoutDate{ get; set; }
             public string LockCode{ get; set; }
+            public string ReservationFrom { get; set; }
             public DateTime? CleaningDateTime { get; set; }
             public int GuestCount { get; set; }
             public bool Dogs { get; set; }
