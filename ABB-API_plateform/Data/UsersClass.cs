@@ -9,7 +9,7 @@ namespace Abb.Data
 {
     public interface IUsersClass
     {
-        Task<List<UserDetail>> GetAllUsers();
+        Task<List<UserDetail>> GetAllUsers(int propertyId);
         Task<UserResponseDTO> GetUser(int id);
         Task<UserResponseDTO> UpdateUser(UserDetail request);
         Task<UserResponseDTO> DeleteUser(int id);
@@ -25,7 +25,7 @@ namespace Abb.Data
             _configuration = configuration;
         }
 
-        public async Task<List<UserDetail>> GetAllUsers()
+        public async Task<List<UserDetail>> GetAllUsers(int propertyId)
         {
             const string sql = @"
         SELECT [Id]
@@ -43,11 +43,13 @@ namespace Abb.Data
               ,[State]
               ,[Zip]
               ,[Notes]
-        FROM [ABB].[dbo].[Users]";
+              ,[PropertyId]
+        FROM [ABB].[dbo].[Users]
+        WHERE [PropertyId] = @PropertyId";
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
-                var users = await db.QueryAsync<UserDetail>(sql);
+                var users = await db.QueryAsync<UserDetail>(sql, new { PropertyId = propertyId });
                 return users.ToList();
             }
         }

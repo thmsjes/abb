@@ -9,7 +9,6 @@
             public DateOnly Date { get; set; }
             public string Category { get; set; }
             public int PropertyId { get; set; }
-
         }
 
         public class TransactionResponseDTO
@@ -43,8 +42,31 @@
             public int PropertyId { get; set; }
         }
 
+        // ⭐ NEW: Mileage DTOs
+        public class CreateMileageRequestDTO
+        {
+            public decimal Mileage { get; set; }
+            public string? Description { get; set; }
+            public DateTime? DateTimeInserted { get; set; }
+            public int PropertyId { get; set; }
+            public DateOnly Date { get; set; }
+        }
 
+        public class MileageDetail
+        {
+            public int Id { get; set; }
+            public decimal Mileage { get; set; }
+            public string? Description { get; set; }
+            public DateTime DateTimeInserted { get; set; }
+            public int PropertyId { get; set; }
+            public DateOnly Date { get; set; }
+        }
 
-
+        public class GetMileageResponseDTO
+        {
+            public bool IsSuccess { get; set; }
+            public string Message { get; set; }
+            public List<MileageDetail> Mileages { get; set; } = new List<MileageDetail>();
+        }
     }
 }

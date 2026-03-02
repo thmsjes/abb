@@ -40,7 +40,7 @@ namespace Abb.Data
             {
                 const string sql = @"
                     SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, 
-                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs
+                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs, ReservationFrom
                     FROM Reservations
                     WHERE PropertyId = @PropertyId";
                     
@@ -69,7 +69,8 @@ namespace Abb.Data
                                     ? null 
                                     : reader.GetDateTime(reader.GetOrdinal("CleaningDateTime")),
                                 GuestCount = reader.GetInt32(reader.GetOrdinal("GuestCount")),
-                                Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs"))
+                                Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs")),
+                                ReservationFrom = reader["ReservationFrom"]?.ToString()
                             };
                             response.Add(reservation);
                         }
@@ -100,7 +101,7 @@ namespace Abb.Data
             {
                 const string sql = @"
                     SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, 
-                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs
+                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs,ReservationFrom
                     FROM Reservations
                     WHERE ConfirmationNumber = @ConfirmationNumber";
 
@@ -129,7 +130,8 @@ namespace Abb.Data
                                 ? null 
                                 : reader.GetDateTime(reader.GetOrdinal("CleaningDateTime")),
                             GuestCount = reader.GetInt32(reader.GetOrdinal("GuestCount")),
-                            Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs"))
+                            Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs")),
+                            ReservationFrom = reader["ReservationFrom"]?.ToString()
                         };
                     }
                 }
@@ -161,7 +163,8 @@ namespace Abb.Data
                         [StaffId],
                         [CleaningDateTime],
                         [GuestCount],
-                        [Dogs]
+                        [Dogs],
+                        [ReservationFrom]
                     ) 
                     VALUES (
                         @ConfirmationNumber, 
@@ -173,7 +176,8 @@ namespace Abb.Data
                         @StaffId,
                         @CleaningDateTime,
                         @GuestCount,
-                        @Dogs
+                        @Dogs,
+                        @ReservationFrom
                     );
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
@@ -242,7 +246,8 @@ namespace Abb.Data
                         [StaffId] = @StaffId,
                         [CleaningDateTime] = @CleaningDateTime,
                         [GuestCount] = @GuestCount,
-                        [Dogs] = @Dogs
+                        [Dogs] = @Dogs,
+                        [ReservationFrom] = @ReservationFrom
                     WHERE [ConfirmationNumber] = @ConfirmationNumber;";
                     
                 using (IDbConnection db = new SqlConnection(_connectionString))
