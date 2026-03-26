@@ -1,6 +1,7 @@
 ﻿using Abb.Business;
 using Abb.Data;
 using ABB_API_plateform.Business;
+using ABB_API_plateform.Data;
 using ABB_API_plateform.Infrastructure;
 using Dapper;
 
@@ -29,7 +30,10 @@ builder.Services.AddScoped<IEventsClass, EventsClass>();
 builder.Services.AddScoped<IInvoices, InvoicesService>();      
 builder.Services.AddScoped<IInvoicesClass, InvoicesClass>();    
 builder.Services.AddScoped<ILogging, Logging>();
-
+    
+// ⭐ FIXED: Register Images with interfaces like all other services
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IImagesClass, ImagesClass>();
 
 // CORS
 builder.Services.AddCors(options => {
