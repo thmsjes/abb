@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 using Dapper;
 using static Abb.DTOs.ReservationDTOs;
 using static Abb.DTOs.TransactionsDTO;
+
 using ABB_API_plateform.Business;
 
 namespace Abb.Data
 {
     public interface IReservationsClass
     {
-        Task<GetReservationResponseDTO> GetReservationByNumber(string confirmationNumber);
+        Task<GetReservationResponseDTO?> GetReservationByNumber(string confirmationNumber);
         Task<List<GetReservationResponseDTO>> GetAllReservationsByPropertyId(int propertyId);
         Task<TransactionResponseDTO> CreateReservation(CreateReservationRequestDTO request);
         Task<TransactionResponseDTO> UpdateReservationByNumber(CreateReservationRequestDTO request);
@@ -24,12 +25,14 @@ namespace Abb.Data
     {
         private readonly string _connectionString;
         private readonly ILogging _logging;
+        private readonly IEventsClass _eventsClass;  // ⭐ Add this
 
-        public ReservationsClass(IConfiguration configuration, ILogging logging)
+        public ReservationsClass(IConfiguration configuration, ILogging logging, IEventsClass eventsClass)  // ⭐ Add IEventsClass
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new ArgumentNullException(nameof(configuration));
             _logging = logging;
+            _eventsClass = eventsClass;  // ⭐ Add this
         }
 
         public async Task<List<GetReservationResponseDTO>> GetAllReservationsByPropertyId(int propertyId)
@@ -40,7 +43,7 @@ namespace Abb.Data
             {
                 const string sql = @"
                     SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, 
-                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs, ReservationFrom
+                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs, ReservationFrom, EventId
                     FROM Reservations
                     WHERE PropertyId = @PropertyId";
                     
@@ -58,19 +61,22 @@ namespace Abb.Data
                             var reservation = new GetReservationResponseDTO
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                ConfirmationNumber = reader["ConfirmationNumber"]?.ToString(),
+                                ConfirmationNumber = reader["ConfirmationNumber"]?.ToString() ?? string.Empty,
                                 CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
                                 PropertyId = reader.GetInt32(reader.GetOrdinal("PropertyId")),
                                 StaffId = reader.GetInt32(reader.GetOrdinal("StaffId")),
                                 CheckInDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckInDate"))),
                                 CheckoutDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckoutDate"))),
-                                LockCode = reader["LockCode"]?.ToString(),
+                                LockCode = reader["LockCode"]?.ToString() ?? string.Empty,
                                 CleaningDateTime = reader.IsDBNull(reader.GetOrdinal("CleaningDateTime")) 
                                     ? null 
                                     : reader.GetDateTime(reader.GetOrdinal("CleaningDateTime")),
                                 GuestCount = reader.GetInt32(reader.GetOrdinal("GuestCount")),
                                 Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs")),
-                                ReservationFrom = reader["ReservationFrom"]?.ToString()
+                                ReservationFrom = reader["ReservationFrom"]?.ToString(),
+                                EventId = reader.IsDBNull(reader.GetOrdinal("EventId")) 
+                                    ? null 
+                                    : reader.GetInt32(reader.GetOrdinal("EventId"))
                             };
                             response.Add(reservation);
                         }
@@ -81,7 +87,7 @@ namespace Abb.Data
             catch (SqlException sqlEx)
             {
                 _logging.LogToFile($"SQL Error in GetAllReservationsByPropertyId - PropertyId: {propertyId}, Error: {sqlEx.Number} - {sqlEx.Message}");
-                throw; // Re-throw to let caller handle
+                throw;
             }
             catch (Exception ex)
             {
@@ -92,7 +98,7 @@ namespace Abb.Data
             return response;
         }
 
-        public async Task<GetReservationResponseDTO> GetReservationByNumber(string confirmationNumber)
+        public async Task<GetReservationResponseDTO?> GetReservationByNumber(string confirmationNumber)
         {
             if (string.IsNullOrWhiteSpace(confirmationNumber))
                 return null;
@@ -101,7 +107,7 @@ namespace Abb.Data
             {
                 const string sql = @"
                     SELECT Id, ConfirmationNumber, CustomerId, PropertyId, StaffId, 
-                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs,ReservationFrom
+                           CheckInDate, CheckoutDate, LockCode, CleaningDateTime, GuestCount, Dogs,ReservationFrom, EventId
                     FROM Reservations
                     WHERE ConfirmationNumber = @ConfirmationNumber";
 
@@ -119,19 +125,22 @@ namespace Abb.Data
                         return new GetReservationResponseDTO
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            ConfirmationNumber = reader["ConfirmationNumber"]?.ToString(),
+                            ConfirmationNumber = reader["ConfirmationNumber"]?.ToString() ?? string.Empty,
                             CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
                             PropertyId = reader.GetInt32(reader.GetOrdinal("PropertyId")),
                             StaffId = reader.GetInt32(reader.GetOrdinal("StaffId")),
                             CheckInDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckInDate"))),
                             CheckoutDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("CheckoutDate"))),
-                            LockCode = reader["LockCode"]?.ToString(),
+                            LockCode = reader["LockCode"]?.ToString() ?? string.Empty,
                             CleaningDateTime = reader.IsDBNull(reader.GetOrdinal("CleaningDateTime")) 
                                 ? null 
                                 : reader.GetDateTime(reader.GetOrdinal("CleaningDateTime")),
                             GuestCount = reader.GetInt32(reader.GetOrdinal("GuestCount")),
                             Dogs = reader.GetBoolean(reader.GetOrdinal("Dogs")),
-                            ReservationFrom = reader["ReservationFrom"]?.ToString()
+                            ReservationFrom = reader["ReservationFrom"]?.ToString(),
+                            EventId = reader.IsDBNull(reader.GetOrdinal("EventId")) 
+                                ? null 
+                                : reader.GetInt32(reader.GetOrdinal("EventId"))
                         };
                     }
                 }
@@ -164,7 +173,8 @@ namespace Abb.Data
                         [CleaningDateTime],
                         [GuestCount],
                         [Dogs],
-                        [ReservationFrom]
+                        [ReservationFrom],
+                        [EventId]
                     ) 
                     VALUES (
                         @ConfirmationNumber, 
@@ -177,14 +187,16 @@ namespace Abb.Data
                         @CleaningDateTime,
                         @GuestCount,
                         @Dogs,
-                        @ReservationFrom
+                        @ReservationFrom,
+                        @EventId
                     );
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
                 using (IDbConnection db = new SqlConnection(_connectionString))
                 {
-                    int id = await db.QuerySingleAsync<int>(sql, request);
-                    if (id == 0)
+                    int reservationId = await db.QuerySingleAsync<int>(sql, request);
+                    
+                    if (reservationId == 0)
                     {
                         _logging.LogToFile($"Failed to create reservation for ConfirmationNumber: {request.ConfirmationNumber}");
                         return new TransactionResponseDTO
@@ -193,21 +205,52 @@ namespace Abb.Data
                             Message = "Unable to create reservation"
                         };
                     }
-                    else return new TransactionResponseDTO
+
+                    // ⭐ NEW: Automatically create cleaning event after successful reservation
+                    try
+                    {
+                        var eventRequest = new EventDTOs.CreateEventRequestDTO
+                        {
+                            Event = "Cleaning",
+                            StartDate = request.CheckoutDate.Value.ToDateTime(TimeOnly.MinValue),  
+                            EndDate = request.CheckoutDate.Value.ToDateTime(TimeOnly.Parse("23:59:59")), 
+                            PropertyId = request.PropertyId,
+                            DateTimeInserted = DateTime.Now,
+                            Completed = false,
+                            UserId = request.StaffId  // Use StaffId from reservation as the responsible user
+                        };
+
+                        var eventResult = await _eventsClass.CreateEvent(eventRequest);
+                        
+                        if (eventResult.IsSuccess)
+                        {
+                            _logging.LogToFile($"Cleaning event created for reservation {reservationId} on {request.CheckoutDate}");
+                        }
+                        else
+                        {
+                            _logging.LogToFile($"Warning: Reservation {reservationId} created but cleaning event failed: {eventResult.Message}");
+                        }
+                    }
+                    catch (Exception eventEx)
+                    {
+                        // Log but don't fail the reservation creation if event creation fails
+                        _logging.LogToFile($"Warning: Reservation {reservationId} created but cleaning event failed with exception: {eventEx.Message}");
+                    }
+
+                    return new TransactionResponseDTO
                     {
                         IsSuccess = true,
-                        Message = $"Reservation id: {id} created"
+                        Message = $"Reservation id: {reservationId} created with cleaning event scheduled"
                     };
                 }
             }
             catch (SqlException sqlEx)
             {
-               
                 string errorMessage = sqlEx.Number switch
                 {
-                    2627 => $"Duplicate reservation: Confirmation number '{request.ConfirmationNumber}' already exists", // Unique constraint violation
-                    547 => "Invalid foreign key reference: Check CustomerId, PropertyId, or StaffId", // Foreign key violation
-                    515 => "Required field is missing or NULL", // Cannot insert NULL
+                    2627 => $"Duplicate reservation: Confirmation number '{request.ConfirmationNumber}' already exists",
+                    547 => "Invalid foreign key reference: Check CustomerId, PropertyId, or StaffId",
+                    515 => "Required field is missing or NULL",
                     _ => $"Database error ({sqlEx.Number}): {sqlEx.Message}"
                 };
                 
@@ -247,7 +290,8 @@ namespace Abb.Data
                         [CleaningDateTime] = @CleaningDateTime,
                         [GuestCount] = @GuestCount,
                         [Dogs] = @Dogs,
-                        [ReservationFrom] = @ReservationFrom
+                        [ReservationFrom] = @ReservationFrom,
+                        [EventId] = @EventId
                     WHERE [ConfirmationNumber] = @ConfirmationNumber;";
                     
                 using (IDbConnection db = new SqlConnection(_connectionString))

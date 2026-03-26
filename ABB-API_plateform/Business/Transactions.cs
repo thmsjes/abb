@@ -37,9 +37,9 @@ namespace Abb.Business
         {
             const string sql = @"
                 INSERT INTO [Transactions] 
-                    ([Description], [Amount], [DateAdded], [Category], [PropertyId]) 
+                    ([Description], [Amount], [DateAdded], [Category], [PropertyId], [Expense], [Payment], [PaymentType], [Vendor]) 
                 VALUES 
-                    (@Description, @Amount, @Date, @Category, @PropertyId)";
+                    (@Description, @Amount, @Date, @Category, @PropertyId, @Expense, @Payment, @PaymentType, @Vendor)";
 
             using (IDbConnection db = new SqlConnection(_connectionString))
             {
@@ -79,7 +79,7 @@ namespace Abb.Business
         public async Task<GetExpenseResponseDTO> GetExpenseByAttributes(GetExpenseByAttributesRequestDTO request)
         {
             StringBuilder sql = new StringBuilder(@"
-                SELECT [Id], [Description], [Amount], [DateAdded], [Category], [PropertyId] 
+                SELECT [Id], [Description], [Amount], [DateAdded] AS [Date], [Category], [PropertyId], [Expense], [Payment], [PaymentType], [Vendor] 
                 FROM [Transactions] 
                 WHERE 1=1 ");
 

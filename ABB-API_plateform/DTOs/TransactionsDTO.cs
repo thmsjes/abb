@@ -9,6 +9,10 @@
             public DateOnly Date { get; set; }
             public string Category { get; set; }
             public int PropertyId { get; set; }
+            public int Expense { get; set; }
+            public int Payment { get; set; }
+            public string Vendor { get; set; }
+            public string PaymentType { get; set; }
         }
 
         public class TransactionResponseDTO
@@ -40,6 +44,11 @@
             public string Category { get; set; }
             public int Id { get; set; }
             public int PropertyId { get; set; }
+            public int Payment { get; set; }
+            public int Expense { get; set; }
+            public string Vendor { get; set; }
+            public string PaymentType { get; set; }
+
         }
 
         // ⭐ NEW: Mileage DTOs

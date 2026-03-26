@@ -14,7 +14,9 @@
             public string ReservationFrom { get; set; }
             public DateTime? CleaningDateTime { get; set; }
             public int GuestCount { get; set; }
+            public int? EventId { get; set; }
             public bool Dogs { get; set; }
+
         }
         public class GetReservationResponseDTO
         {
@@ -30,6 +32,7 @@
             public DateTime? CleaningDateTime { get; set; }
             public int GuestCount { get; set; }
             public bool Dogs { get; set; }
+            public int? EventId { get; set; }
         }
 
 
